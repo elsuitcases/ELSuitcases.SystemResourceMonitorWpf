@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
+using System.Diagnostics.PerformanceData;
 using System.IO;
 using System.Linq;
+using System.Management;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -309,6 +311,55 @@ namespace ELSuitcases.SystemResourceMonitorWpf
                 driveUsage = ((float)(di.TotalSize - di.TotalFreeSpace) / di.TotalSize) * 100;
 
             return driveUsage;
+        }
+
+        private float GetAllGpuMemoryUsage()
+        {
+            return ((float)GetAllGpuMemoryUsedSize() / (float)GetAllGpuMemoryTotalSize()) * 100;
+        }
+
+        private ulong GetAllGpuMemoryTotalSize()
+        {
+            ulong gpuRamTotal = 0;
+
+            var searcher = new ManagementObjectSearcher("SELECT Name, AdapterRAM FROM Win32_VideoController");
+
+            foreach (ManagementObject obj in searcher.Get())
+            {
+                ulong ramBytes = ulong.Parse(obj["AdapterRAM"].ToString());
+                gpuRamTotal += ramBytes;
+            }
+
+            return gpuRamTotal;
+        }
+
+        private ulong GetAllGpuMemoryUsedSize()
+        {
+            ulong gpuRamUsed = 0;
+
+            PerformanceCounterCategory category = new PerformanceCounterCategory("GPU Adapter Memory");
+            List<PerformanceCounter> lstPcGpu = category.GetInstanceNames()
+                                                        .SelectMany(instance => category.GetCounters(instance))
+                                                        .Where(counter => counter.CounterName == "Dedicated Usage")
+                                                        .ToList();
+
+            if ((lstPcGpu != null) && (lstPcGpu.Count > 0))
+            {
+                try
+                {
+                    gpuRamUsed = (ulong)lstPcGpu.Sum(counter => counter.NextValue());
+                }
+                catch (InvalidOperationException) { }
+                catch (ArgumentNullException) { }
+                catch (Exception) { }
+
+                foreach (var pc in lstPcGpu)
+                {
+                    pc.Dispose();
+                }
+            }
+
+            return gpuRamUsed;
         }
 
         private string GetSystemHostName()
