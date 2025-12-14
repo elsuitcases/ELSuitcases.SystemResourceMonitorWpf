@@ -29,13 +29,13 @@ namespace ELSuitcases.SystemResourceMonitorWpf
     public partial class MainWindow : Window
     {
         private const string CONFIG_KEY_NAME_UPDATE_INTERVAL = "UPDATE_INTERVAL_SEC";
+        private const int DEFAULT_UPDATE_INTERVAL_SEC = 1;
 
-        private TimeSpan intervalUpdate = TimeSpan.FromMilliseconds(1000);
+        private TimeSpan intervalUpdate = TimeSpan.FromSeconds(DEFAULT_UPDATE_INTERVAL_SEC);
         private Timer timerUsage;
         private ComputerInfo ciInfo;
         private PerformanceCounter pcCpu;
-        private List<PerformanceCounter> lstPcGpu;
-        private DriveInfo diHddC;
+        private List<PerformanceCounter> lstPcGpu;        
 
         public CounterInfoRecord SystemCounterInfo
         {
@@ -183,27 +183,23 @@ namespace ELSuitcases.SystemResourceMonitorWpf
                 lstPcGpu.Clear();
                 lstPcGpu = null;
             }
-            if (diHddC != null)
-            {
-                diHddC = null;
-            }
+        }
+
+        private void txtIntervalUpdateSec_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            TextBox ctl = (TextBox)e.Source;
+
+            int interval = (int.TryParse(ctl.Text, out interval)) && (interval > 0) ?
+                                interval :
+                                DEFAULT_UPDATE_INTERVAL_SEC;
+
+            ctl.Text = interval.ToString();
         }
 
         private void btnSaveConfig_Click(object sender, RoutedEventArgs e)
         {
-            int intervalSec = 1;
-            
-            if ((string.IsNullOrEmpty(txtIntervalUpdateSec.Text)) || (!int.TryParse(txtIntervalUpdateSec.Text, out intervalSec)))
-            {
-                intervalSec = 1;
-                txtIntervalUpdateSec.Text = intervalSec.ToString();
-            }
-            else
-            {
-                intervalSec = int.Parse(txtIntervalUpdateSec.Text);
-            }
+            intervalUpdate = TimeSpan.FromSeconds(int.Parse(txtIntervalUpdateSec.Text));
 
-            intervalUpdate = TimeSpan.FromSeconds(intervalSec);
             Initialize(intervalUpdate);
 
             SaveAppConfig();
@@ -227,7 +223,6 @@ namespace ELSuitcases.SystemResourceMonitorWpf
                         .Select(name => new PerformanceCounter("GPU Engine", "Utilization Percentage", name))
                         .ToList();
             ciInfo = new ComputerInfo();
-            diHddC = new DriveInfo("C");
 
             Thread.Sleep(500);
 
@@ -286,6 +281,8 @@ namespace ELSuitcases.SystemResourceMonitorWpf
                     lstPcGpu.ForEach(c => c.NextValue());
                 }
                 catch (InvalidOperationException) { }
+                catch (ArgumentNullException) { }
+                catch (Exception) { }
 
                 Thread.Sleep(500);
 
@@ -294,6 +291,8 @@ namespace ELSuitcases.SystemResourceMonitorWpf
                     gpuUsage = lstPcGpu.Sum(c => c.NextValue());
                 }
                 catch (InvalidOperationException) { }
+                catch (ArgumentNullException) { }
+                catch (Exception) { }
             }
 
             return gpuUsage;
@@ -301,10 +300,20 @@ namespace ELSuitcases.SystemResourceMonitorWpf
 
         private float GetHddCUsage()
         {
-            if (diHddC == null)
-                return 0;
-            else
-                return ((float)(diHddC.TotalSize - diHddC.TotalFreeSpace) / diHddC.TotalSize) * 100;
+            return GetDriveUsage("C");
+        }
+
+        private float GetDriveUsage(string driveLetter)
+        {
+            float driveUsage = 0;
+
+            DriveInfo di = DriveInfo.GetDrives()
+                                .Where(d => d.Name == string.Format("{0}:\\", driveLetter.ToUpper()))
+                                .SingleOrDefault();
+            if (di != null)
+                driveUsage = ((float)(di.TotalSize - di.TotalFreeSpace) / di.TotalSize) * 100;
+
+            return driveUsage;
         }
 
         private string GetSystemHostName()
@@ -326,7 +335,7 @@ namespace ELSuitcases.SystemResourceMonitorWpf
         {
             if (ConfigurationManager.AppSettings[CONFIG_KEY_NAME_UPDATE_INTERVAL] == null)
             {
-                intervalUpdate = TimeSpan.FromSeconds(1);                
+                intervalUpdate = TimeSpan.FromSeconds(1);
             }
             else
             {
@@ -347,6 +356,7 @@ namespace ELSuitcases.SystemResourceMonitorWpf
                 config.AppSettings.Settings.Add(CONFIG_KEY_NAME_UPDATE_INTERVAL, intervalUpdate.Seconds.ToString());
 
             config.Save(ConfigurationSaveMode.Modified);
+
             ConfigurationManager.RefreshSection("appSettings");
         }
     }

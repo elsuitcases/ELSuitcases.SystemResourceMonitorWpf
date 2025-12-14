@@ -294,7 +294,8 @@
                            FontWeight="Bold" />
                 <TextBox x:Name="txtIntervalUpdateSec"
                          Width="50"
-                         TextAlignment="Right" />
+                         TextAlignment="Right"
+                         TextChanged="txtIntervalUpdateSec_TextChanged" />
                 <TextBlock Text=" (초)" />
                 <Button x:Name="btnSaveConfig"
                         Margin="15,0,0,0"
