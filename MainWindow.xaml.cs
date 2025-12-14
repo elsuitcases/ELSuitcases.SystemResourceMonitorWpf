@@ -97,7 +97,8 @@ namespace ELSuitcases.SystemResourceMonitorWpf
                 SystemCounterInfo.GpuUsageMin = SystemCounterInfo.GpuUsage;
                 SystemCounterInfo.GpuUsageMinTime = SystemCounterInfo.GpuUsageTime;
             }
-            if (SystemCounterInfo.GpuUsage <= SystemCounterInfo.GpuUsageMin)
+            if ((SystemCounterInfo.GpuUsage > 0) &&
+                (SystemCounterInfo.GpuUsage <= SystemCounterInfo.GpuUsageMin))
             {
                 SystemCounterInfo.GpuUsageMin = SystemCounterInfo.GpuUsage;
                 SystemCounterInfo.GpuUsageMinTime = SystemCounterInfo.GpuUsageTime;
