@@ -34,8 +34,7 @@ namespace ELSuitcases.SystemResourceMonitorWpf
         private TimeSpan intervalUpdate = TimeSpan.FromSeconds(DEFAULT_UPDATE_INTERVAL_SEC);
         private Timer timerUsage;
         private ComputerInfo ciInfo;
-        private PerformanceCounter pcCpu;
-        private List<PerformanceCounter> lstPcGpu;        
+        private PerformanceCounter pcCpu;        
 
         public CounterInfoRecord SystemCounterInfo
         {
@@ -173,17 +172,6 @@ namespace ELSuitcases.SystemResourceMonitorWpf
             {
                 ciInfo = null;
             }
-            if (lstPcGpu != null)
-            {
-                foreach (var c in lstPcGpu)
-                {
-                    c.Close();
-                    c.Dispose();
-                }
-
-                lstPcGpu.Clear();
-                lstPcGpu = null;
-            }
         }
 
         private void txtIntervalUpdateSec_TextChanged(object sender, TextChangedEventArgs e)
@@ -217,12 +205,7 @@ namespace ELSuitcases.SystemResourceMonitorWpf
             }));
 
             pcCpu = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-            pcCpu.NextValue();
-            lstPcGpu = new PerformanceCounterCategory("GPU Engine")
-                        .GetInstanceNames()
-                        .Where(name => name.EndsWith("engtype_3D"))
-                        .Select(name => new PerformanceCounter("GPU Engine", "Utilization Percentage", name))
-                        .ToList();
+            pcCpu.NextValue();            
             ciInfo = new ComputerInfo();
 
             Thread.Sleep(500);
@@ -275,6 +258,12 @@ namespace ELSuitcases.SystemResourceMonitorWpf
         {
             float gpuUsage = 0;
 
+            List<PerformanceCounter> lstPcGpu = new PerformanceCounterCategory("GPU Engine")
+                                                    .GetInstanceNames()
+                                                    .Where(name => name.EndsWith("engtype_3D"))
+                                                    .Select(name => new PerformanceCounter("GPU Engine", "Utilization Percentage", name))
+                                                    .ToList();
+
             if ((lstPcGpu != null) && (lstPcGpu.Count > 0))
             {
                 try
@@ -294,6 +283,11 @@ namespace ELSuitcases.SystemResourceMonitorWpf
                 catch (InvalidOperationException) { }
                 catch (ArgumentNullException) { }
                 catch (Exception) { }
+
+                foreach (var pc in lstPcGpu)
+                {
+                    pc.Dispose();
+                }
             }
 
             return gpuUsage;
