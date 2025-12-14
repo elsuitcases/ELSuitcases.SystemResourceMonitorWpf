@@ -9,8 +9,7 @@
         Height="800"
         Width="800"
         ResizeMode="CanMinimize"
-        WindowStartupLocation="CenterScreen"
-        Loaded="Window_Loaded">
+        WindowStartupLocation="CenterScreen">
 
     <Grid Margin="15">
         <Grid.RowDefinitions>

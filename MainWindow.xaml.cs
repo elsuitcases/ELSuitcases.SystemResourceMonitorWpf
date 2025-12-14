@@ -49,9 +49,12 @@ namespace ELSuitcases.SystemResourceMonitorWpf
             InitializeComponent();
 
             SystemCounterInfo = new CounterInfoRecord();
+
+            this.Loaded += MainWindow_Loaded;
+            this.Closed += MainWindow_Closed;
         }
 
-
+        
 
         private void TimerUsageCallback(object state)
         {
@@ -146,10 +149,44 @@ namespace ELSuitcases.SystemResourceMonitorWpf
             
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             LoadAppConfig();
             Initialize(intervalUpdate);
+        }
+
+        private void MainWindow_Closed(object sender, EventArgs e)
+        {
+            if (timerUsage != null)
+            {
+                timerUsage.Dispose();
+                timerUsage = null;
+            }
+            if (pcCpu != null)
+            {
+                pcCpu.Close();
+                pcCpu.Dispose();
+                pcCpu = null;
+            }
+            if (ciInfo != null)
+            {
+                ciInfo = null;
+            }
+            if (lstPcGpu != null)
+            {
+                foreach (var c in lstPcGpu)
+                {
+                    c.Close();
+                    c.Dispose();
+                }
+
+                lstPcGpu.Clear();
+                lstPcGpu = null;
+            }
+            if (diHddC != null)
+            {
+                diHddC = null;
+            }
         }
 
         private void btnSaveConfig_Click(object sender, RoutedEventArgs e)
@@ -224,38 +261,50 @@ namespace ELSuitcases.SystemResourceMonitorWpf
 
         private float GetCpuUsage()
         {
-            return pcCpu.NextValue();
+            if (pcCpu == null) 
+                return 0;
+            else 
+                return pcCpu.NextValue();
         }
 
         private float GetRamUsage()
         {
-            return (((float)ciInfo.TotalPhysicalMemory - (float)ciInfo.AvailablePhysicalMemory) / (float)ciInfo.TotalPhysicalMemory) * 100;
+            if (ciInfo == null)
+                return 0;
+            else
+                return (((float)ciInfo.TotalPhysicalMemory - (float)ciInfo.AvailablePhysicalMemory) / (float)ciInfo.TotalPhysicalMemory) * 100;
         }
 
         private float GetGpuUsage()
         {
             float gpuUsage = 0;
 
-            try
+            if ((lstPcGpu != null) && (lstPcGpu.Count > 0))
             {
-                lstPcGpu.ForEach(c => c.NextValue());
-            }
-            catch (InvalidOperationException) { }
+                try
+                {
+                    lstPcGpu.ForEach(c => c.NextValue());
+                }
+                catch (InvalidOperationException) { }
 
-            Thread.Sleep(500);
+                Thread.Sleep(500);
 
-            try
-            {
-                gpuUsage = lstPcGpu.Sum(c => c.NextValue());
+                try
+                {
+                    gpuUsage = lstPcGpu.Sum(c => c.NextValue());
+                }
+                catch (InvalidOperationException) { }
             }
-            catch (InvalidOperationException) { }
 
             return gpuUsage;
         }
 
         private float GetHddCUsage()
         {
-            return ((float)(diHddC.TotalSize - diHddC.TotalFreeSpace) / diHddC.TotalSize) * 100;
+            if (diHddC == null)
+                return 0;
+            else
+                return ((float)(diHddC.TotalSize - diHddC.TotalFreeSpace) / diHddC.TotalSize) * 100;
         }
 
         private string GetSystemHostName()
