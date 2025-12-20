@@ -288,6 +288,7 @@ namespace ELSuitcases.SystemResourceMonitorWpf
 
                 foreach (var pc in lstPcGpu)
                 {
+                    pc.Close();
                     pc.Dispose();
                 }
             }
@@ -328,6 +329,8 @@ namespace ELSuitcases.SystemResourceMonitorWpf
             {
                 ulong ramBytes = ulong.Parse(obj["AdapterRAM"].ToString());
                 gpuRamTotal += ramBytes;
+
+                obj.Dispose();
             }
 
             return gpuRamTotal;
@@ -355,6 +358,7 @@ namespace ELSuitcases.SystemResourceMonitorWpf
 
                 foreach (var pc in lstPcGpu)
                 {
+                    pc.Close();
                     pc.Dispose();
                 }
             }
