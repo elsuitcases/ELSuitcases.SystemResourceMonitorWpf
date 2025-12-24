@@ -113,36 +113,9 @@ namespace ELSuitcases.SystemResourceMonitorWpf
 
         public static System.Drawing.Rectangle GetWorkingAreaExceptTaskbar(IntPtr hWindow)
         {
-            System.Drawing.Rectangle rect = new System.Drawing.Rectangle();
-
-            RECT rcTaskbar = GetTaskbarAreaRectangle();
-            TaskbarPosition position = GetTaskbarPosition();
             var screen = System.Windows.Forms.Screen.FromHandle(hWindow);
 
-            switch (position)
-            {
-                case TaskbarPosition.Left:
-                    rect.Size = new System.Drawing.Size(screen.WorkingArea.Width - rcTaskbar.right, screen.WorkingArea.Height);
-                    rect.Location = new System.Drawing.Point(rcTaskbar.right, screen.WorkingArea.Top);
-                    break;
-
-                case TaskbarPosition.Right:
-                    rect.Size = new System.Drawing.Size(screen.WorkingArea.Width - (rcTaskbar.right - rcTaskbar.left), screen.WorkingArea.Height);
-                    rect.Location = new System.Drawing.Point(screen.WorkingArea.Left, screen.WorkingArea.Top);
-                    break;
-
-                case TaskbarPosition.Top:
-                    rect.Size = new System.Drawing.Size(screen.WorkingArea.Width, screen.WorkingArea.Height - (rcTaskbar.bottom - rcTaskbar.top));
-                    rect.Location = new System.Drawing.Point(screen.WorkingArea.Left, rcTaskbar.bottom);
-                    break;
-
-                case TaskbarPosition.Bottom:
-                    rect.Size = new System.Drawing.Size(screen.WorkingArea.Width, screen.WorkingArea.Height - (rcTaskbar.bottom - rcTaskbar.top));
-                    rect.Location = new System.Drawing.Point(screen.WorkingArea.Left, screen.WorkingArea.Top);
-                    break;
-            }
-
-            return rect;
+            return screen.WorkingArea;
         }
     }
 }
